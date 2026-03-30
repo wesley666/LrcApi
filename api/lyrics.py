@@ -55,9 +55,11 @@ def lyrics():
         artist = unquote_plus(request.args.get('artist', ''))
         album = unquote_plus(request.args.get('album', ''))
         result: list = searchx.search_all(title=title, artist=artist, album=album, timeout=30)
-        if not result[0].get('lyrics'):
-            return "Lyrics not found.", 404
-        return result[0].get('lyrics')
+        for item in result:
+            lyric = item.get('lyrics')
+            if lyric:
+                return lyric
+        return "Lyrics not found.", 404
     except:
         return "Lyrics not found.", 404
 

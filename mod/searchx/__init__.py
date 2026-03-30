@@ -1,38 +1,48 @@
 from concurrent import futures
 
-from mod.searchx import api, kugou, netease
+from mod.searchx import api, kugou, lrclib, netease
 
 
 def search_all(title, artist, album, timeout=15):
-    funcs = [api, kugou, netease]
-    results = []
+    funcs = [lrclib, api, kugou, netease]
+    results_by_source = [[] for _ in funcs]
 
-    def request(task):
+    def request(index, task):
         res: list = task.search(title, artist, album)
         if isinstance(res, list):
-            results.extend(res)
+            return index, res
+        return index, []
 
     with futures.ThreadPoolExecutor() as executor:
-        _futures = []
-        for func in funcs:
-            _futures.append(executor.submit(request, func))
+        future_map = {
+            executor.submit(request, index, func): index
+            for index, func in enumerate(funcs)
+        }
 
         # 等待所有任务完成，或回收超时任务，处理TimeoutError
         try:
-            for future in futures.as_completed(_futures, timeout=timeout):
-                future.result()
+            for future in futures.as_completed(future_map, timeout=timeout):
+                try:
+                    index, result = future.result()
+                except Exception:
+                    continue
+                results_by_source[index] = result
         except futures.TimeoutError:
             # 记录超时任务
             pass
 
         # 回收超时任务
-        for future in _futures:
+        for future in future_map:
             if future.done():
                 if future.exception():
                     # 处理异常任务
                     pass
             else:
                 future.cancel()
+
+    results = []
+    for items in results_by_source:
+        results.extend(items)
 
     return results
 
