@@ -10,7 +10,17 @@ def search_all(title, artist, album, timeout=15):
     def request(index, task):
         res: list = task.search(title, artist, album)
         if isinstance(res, list):
-            return index, res
+            source_name = task.__name__.rsplit('.', 1)[-1]
+            normalized = []
+            for item in res:
+                if isinstance(item, dict):
+                    normalized.append({
+                        "source": item.get("source") or source_name,
+                        **item,
+                    })
+                else:
+                    normalized.append(item)
+            return index, normalized
         return index, []
 
     with futures.ThreadPoolExecutor() as executor:

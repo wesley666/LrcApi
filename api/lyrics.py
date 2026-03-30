@@ -86,7 +86,8 @@ def lrc_json():
                     "id": tools.calculate_md5(file_content),
                     "title": title,
                     "artist": artist,
-                    "lyrics": file_content
+                    "lyrics": file_content,
+                    "source": "local"
                 })
 
     lyrics_list = searchx.search_all(title, artist, album)
