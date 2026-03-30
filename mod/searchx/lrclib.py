@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 SEARCH_URL = "https://lrclib.net/api/search"
 REQUEST_TIMEOUT = 10
 RATIO_THRESHOLD = 0.2
-RESULT_CAP = 3
+RESULT_CAP = 5
 
 headers = {
     "User-Agent": "LrcApiMMy/1.0",
@@ -44,8 +44,8 @@ def search(title="", artist="", album="") -> list:
     params = {"track_name": title}
     if artist:
         params["artist_name"] = artist
-    if album:
-        params["album_name"] = album
+
+    logger.info("LRCLIB GET request: url=%s params=%r", SEARCH_URL, params)
 
     response = requests.get(
         SEARCH_URL,
@@ -85,9 +85,8 @@ def search(title="", artist="", album="") -> list:
             textcompare.association(title, item.get("name") or ""),
         )
         artist_ratio = textcompare.assoc_artists(artist, artist_name)
-        album_ratio = textcompare.association(album, album_name)
 
-        ratio = (title_ratio * (artist_ratio + album_ratio) / 2.0) ** 0.5
+        ratio = (title_ratio * artist_ratio) ** 0.5
         if ratio < RATIO_THRESHOLD:
             continue
 
